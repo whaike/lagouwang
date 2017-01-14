@@ -7,11 +7,4 @@
 绘图:pygal (2.3.1)
 
 
-该陆慕301.txt因为有6M左右，故未将其传到GitHub，而是与数据文件一起，放在了百度云
-
-echo "# lagouwang" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git remote add origin https://github.com/whaike/lagouwang.git
-git push -u origin master
+该目录301.txt因为有6M左右，故未将其传到GitHub，而是与数据文件一起，放在了百度云http://pan.baidu.com/s/1skEDyXn
