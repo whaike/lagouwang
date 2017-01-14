@@ -258,7 +258,7 @@ def testIp(ip_list):
 def ip2db(iplist):
     con = db.connect('127.0.0.1','root','******','lagouwang',charset='utf8')
     cur = con.cursor()
-    cur.execute("truncate table xiciproxy")
+    #cur.execute("truncate table xiciproxy") #写入之前是否清空数据库
     for ip in iplist:
         try:
             cur.execute("insert into xiciproxy(ip) values('%s')"%(ip))

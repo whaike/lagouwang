@@ -1,12 +1,10 @@
 #-*- coding:utf-8 -*-
-import scrapy
 import re
+import scrapy
+import MySQLdb as db
 import datetime,time
-import urllib2
 from lxml import etree
 from lagouwang.items import LagouwangItem
-import urllib
-import MySQLdb as db
 from lagouwang.spiders import httpsProxys as hp
 from scrapy.utils.project import get_project_settings
 
@@ -18,7 +16,6 @@ class lagouSpiderItem(scrapy.Spider):
         print 'preparing ------------------'
         self.start_page = 1
         self.modelUrl = 'https://www.lagou.com/jobs/'
-        #self.oldTime = datetime.datetime.now().hour
         self.DBK = get_project_settings().getdict('DBK') #获取settings中的DBK配置
         hp.NEWHTTPS() #准备代理IP池
         self.oldPages = self.getOldpages() #查询已插入页面列表
@@ -175,7 +172,6 @@ class lagouSpiderItem(scrapy.Spider):
             rows = map(lambda x:int(x[0]),row)
         cur.close()
         con.close()
-
         t = open('E:/Python/Scrapy_test/lagouwang/301.txt','r')
         pages = t.read()
         ipss = pages.split(',')[:-1:]

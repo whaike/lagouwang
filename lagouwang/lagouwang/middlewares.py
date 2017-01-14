@@ -1,7 +1,6 @@
 #-*- coding:utf-8 -*-
 from scrapy.exceptions import IgnoreRequest
 import MySQLdb as db
-import base64
 import random
 from settings import USER_AGENTS
 from scrapy.utils.project import get_project_settings
@@ -103,7 +102,6 @@ class Sup(object):
     @classmethod
     def letpagesgo(self,url):
         page1 = url.split('/')[-1].split('.')[0]
-        # if int(page1) not in self.oldPages:
         page2 = page1+','
         f = open('301.txt','a')
         f.writelines(page2)

@@ -2,7 +2,6 @@
 import MySQLdb as db
 
 #获取所有分类信息,以字典形式返回
-# classf = getClassify()
 def getClassify():
     url = 'https://www.lagou.com/'
     data = urllib2.urlopen(url).read().decode('utf-8')
@@ -86,4 +85,5 @@ def getOtherPages():
 if __name__ == '__main__':
 	#getClassify()
 	#getOtherPages()
-	getProxysNumberFromDB()
+	# getProxysNumberFromDB()
+
