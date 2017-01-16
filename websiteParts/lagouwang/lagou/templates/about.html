@@ -1,0 +1,544 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title %}爬取拉勾网数据源码{% endblock %}
+{% block linkScript %}
+    <script type="text/javascript" src="{% static 'js/shCore.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/shBrushPython.js' %}"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/shCoreDefault.css' %}">
+    <script type="text/javascript">SyntaxHighlighter.all();</script>
+{% endblock %}
+
+{% block contents %}
+<div class="container">
+    <h3 class="page-header">基于scrapy爬虫抓取拉勾网主要部分源码</h3>
+    <div class="row">
+        <div class="col-lg-9 col-ms-12">
+            <h4>代码逻辑</h4>
+            <embed src="{% static 'images/process.svg' %}" type="image/svg+xml" pluginspage="http://www.adobe.com/svg/viewer/install/" />
+           
+        </div>
+    </div>
+    <h3 class="page-header">来看源码</h3>
+        <div class="row">
+            <div class="col-lg-9">
+                <pre name="code" class="brush:python">
+#获取所有分类信息,以字典形式返回
+def getClassify():
+    url = 'https://www.lagou.com/'
+    data = urllib2.urlopen(url).read().decode('utf-8')
+    html = etree.HTML(data)
+    classify = {}
+    try:
+        for i in range(8):
+            fenlei = html.xpath('//*[@id="sidebar"]/div[%s]/div'%i)
+            for j in range(0,len(fenlei)):
+                tech = fenlei[j].xpath('div[1]/h2/text()')[0].strip()
+                classify[tech] = {}
+                techs = fenlei[j].xpath('div[2]/dl')
+                for k in range(0,len(techs)):
+                    tech_name = techs[k].xpath('dt/a/text()')[0].strip()
+                    tech_name_items = techs[k].xpath('dd/a/text()')
+                    items = []
+                    for l in range(0,len(tech_name_items)):
+                        items.append(tech_name_items[l])
+                    classify[tech][tech_name]=items
+    except Exception,e:
+        print e
+    return classify
+                </pre>
+            </div>
+            <div class="col-lg-3">
+                <h4>获取所有招聘信息的分类</h4>
+                <p>实际执行的代码中是获取信息后以常量形式使用的</p>
+            </div>
+        </div>
+        <div class="row">
+            <h3>Spider抓取代码</h3>
+            <div class="col-lg-9">
+                <pre name="code" class="brush:python">
+#-*- coding:utf-8 -*-
+import re
+import scrapy
+import MySQLdb as db
+import datetime,time
+from lxml import etree
+from lagouwang.items import LagouwangItem
+from lagouwang.spiders import httpsProxys as hp
+from scrapy.utils.project import get_project_settings
+
+class lagouSpiderItem(scrapy.Spider):
+    name = 'lagouSpider'
+    allowed_domains = ['lagou.com']
+
+    def __init__(self):
+        print 'preparing ------------------'
+        self.start_page = 1
+        self.modelUrl = 'https://www.lagou.com/jobs/'
+        self.DBK = get_project_settings().getdict('DBK') #获取settings中的DBK配置
+        hp.NEWHTTPS() #准备代理IP池
+        self.oldPages = self.getOldpages() #查询已插入页面列表
+
+    def start_requests(self):
+        print 'Begin--------------------'
+        for page in range(self.start_page,2666666,1):
+            if page not in self.oldPages:
+                yield scrapy.Request(self.modelUrl+str(page)+'.html',callback=self.parse,dont_filter=True)
+
+        #本段代码用于捡漏
+        # newpages = self.getNewPages()
+        # for page in newpages:
+        #     yield scrapy.Request(self.modelUrl+str(page)+'.html',callback=self.parse,dont_filter=True)
+
+    def parse(self,response):
+        print response.url
+        items = []
+        pre_item = LagouwangItem()
+        pre_item['title']= self.parseTitle(response) #职位标题
+        pre_item['company'] = self.parseCompany(response)  #公司名称
+        pre_item['jobkwd'] = self.parseJobkwd(response)   #职位标签
+        pre_item['salary'] = self.parseSalary(response)  #薪水
+        pre_item['background'] = self.parseBackground(response) #经验
+        pre_item['industry'] = self.parseIndustry(response) #公司性质
+        pre_item['description'] = self.parseDescription(response) #职位详细描述
+        pre_item['address'] = self.parseAddress(response) #公司地址
+        pre_item['companyurl'] = self.parseCompanyUrl(response) #公司主页
+        pre_item['publish_time'] = self.parsePublishTime(response) #发布时间
+        pre_item['pages'] = response.url.split('/')[-1].split('.')[0]
+        items.append(pre_item)
+        return items
+
+    #解析招聘职位
+    def parseTitle(self,res):
+        try:
+            title = res.xpath('//div[@class="position-head"]/div/div[1]/div/span/text()')[0].extract() #招聘职位
+            return title
+        except Exception,e:
+            self.errorLog(res,'parseTitle',e)
+            return ""
+
+    #公司名称
+    def parseCompany(self,res):
+        company = ""
+        company = str(res.xpath('//*[@id="job_company"]/dt/a/div/h2/text()').extract()[0].strip())
+        return company
+
+    #职位标签 ,返回数组
+    def parseJobkwd(self,res):
+        jobkwd = []
+        try:
+            lis = res.xpath('/html/body/div[@class="position-head"]/div/div[1]/*[@class="job_request"]/ul/li')
+            if len(lis)>=1:
+                for i in range(0,len(lis)):
+                    job = lis[i].xpath('text()').extract()[0]
+                    jobkwd.append(job)
+        except Exception,e:
+            self.errorLog(res,'parseJobkwd',e)
+        return jobkwd
+
+    #薪水
+    def parseSalary(self,res):
+        salary = ""
+        try:
+            salary = res.xpath('/html/body/div[@class="position-head"]/div/div[1]/dd/p[1]/span[1]/text()').extract()[0]
+        except Exception,e:
+            self.errorLog(res,'parseSalary',e)
+        return salary
+
+    #工作经验
+    def parseBackground(self,res):
+        background = ""
+        try:
+            background = res.xpath('/html/body/div[@class="position-head"]/div/div[1]/dd/p[1]/span[3]/text()').extract()[0].strip('/').strip()
+        except Exception,e:
+            self.errorLog(res,'parseBackground',e)
+        return background
+
+    #公司性质
+    def parseIndustry(self,res):
+        industry = ""
+        try:
+            industry = res.xpath('//*[@id="job_company"]/dd/ul/li[1]/text()').extract()[1].strip()
+        except Exception,e:
+            self.errorLog(res,'parseIndustry',e)
+        return industry
+
+    #职位详细描述
+    def parseDescription(self,res):
+        description = ""
+        try:
+            description = res.xpath('string(//*[@id="job_detail"]/dd[2])').extract()[0].encode('utf-8').strip()
+        except Exception,e:
+            self.errorLog(res,'parseDescription',e)
+        return description
+
+    #公司地址
+    def parseAddress(self,res):
+        address = ""
+        try:
+            address = res.xpath('string(//*[@id="job_detail"]/dd[3]/div[1])')[0].extract().strip()
+            str1 = "".join(map(lambda x:x.strip() ,address.split('-')))
+            address = "".join(map(lambda x:x.strip(),str1.split(' ')))[:-4:]
+            # self.logger.info(address)
+        except Exception,e:
+            address = res.xpath('/html/body/div[@class="position-head"]/div/div[1]/dd/p[1]/span[2]/text()').extract()[0].strip('/').strip()
+            self.logger.info('未找到具体地址,使用省名%s'%address)
+        else:
+            if '查看'==address:
+                address = res.xpath('/html/body/div[@class="position-head"]/div/div[1]/dd/p[1]/span[2]/text()').extract()[0].strip('/').strip()
+                self.logger.info('未找到具体地址,使用省名%s'%address)
+        return address
+
+    #公司主页
+    def parseCompanyUrl(self,res):
+        companyurl = ""
+        try:
+            companyurl = res.xpath('//*[@id="job_company"]/dd/ul/li[last()]/a/@href')[0].extract()
+        except Exception,e:
+            self.errorLog(res,'parseCompanyUrl',e)
+        return companyurl
+
+    #获取发布时间，并以Y-m-d形式的字符串返回
+    def parsePublishTime(self,res):
+        date = res.xpath('/html/body/div[@class="position-head"]/div/div[1]/dd/p[2]/text()').re('\S+')[0] #获取时间部分
+        getTime = '2000-00-00'
+        try:
+            if re.match('\d+-\d+-\d+',date): #标准日期，直接返回字符串
+                getTime = re.match('\d+-\d+-\d+',date).group()
+                print getTime
+            elif re.match('\d+:\d+',date): #匹配类似12:12 发布这样的格式，返回当前时间格式后的字符串
+                getTime = datetime.datetime.today().strftime('%Y-%m-%d')
+            elif re.match('\d+',date): #如果是类似n天前这样的时间,则取n之后与当前时间相减，格式化为字符串后返回
+                dayago = int(re.match('\d+',date).group())
+                getTime = (datetime.datetime.today()-datetime.timedelta(days=dayago)).strftime('%Y-%m-%d')
+            else:
+                getTime = '2000-00-00'
+        except Exception,e:
+            self.errorLog(res,'parsePublishTime',e)
+        return getTime
+
+    #获取已插入页面list
+    def getOldpages(self):
+        con = db.connect(self.DBK['host'],self.DBK['user'],self.DBK['passwd'],self.DBK['db'],self.DBK['port'],charset=self.DBK['charset'])
+        cur = con.cursor()
+        rows = []
+        try:
+            cur.execute("select pages from lagou")
+        except Exception,e:
+            print 'select error',e
+        else:
+            row  = cur.fetchall()
+            rows = map(lambda x:int(x[0]),row)
+        cur.close()
+        con.close()
+        t = open('E:/Python/Scrapy_test/lagouwang/301.txt','r')
+        pages = t.read()
+        ipss = pages.split(',')[:-1:]
+        t.close()
+        for i in ipss:
+            if i:
+                rows.append(int(i))
+        if rows:
+            self.logger.info('the Oldpages list is %s'%str(rows))
+            return rows
+        else:
+            return ()
+
+    #异常log
+    def errorLog(self,res,func,e):
+        self.logger.info('执行函数 %s 出错'%func)
+        self.logger.info(res.url)
+        self.logger.info(e)
+
+    #用于获取那些因为超时或者没有抓取过的页面
+    def getNewPages(self):
+        con = db.connect(self.DBK['host'],self.DBK['user'],self.DBK['passwd'],self.DBK['db'],self.DBK['port'],charset=self.DBK['charset'])
+        cur = con.cursor()
+        cur.execute("select newp from newpages")
+        rows = cur.fetchall()
+        cur.close()
+        con.close()
+        pages = map(lambda x:int(x[0]),rows)
+        self.logger.info('新加入页面数量:',len(pages))
+        return pages
+                </pre>
+            </div>
+            <div class="col-lg-3">
+                <h4>Spider爬取数据部分</h4>
+                <p><code>parse</code>方法用于解析网页并提取所需的信息.因为获取数据的方式是从网页中而不是 <code>JSON</code>因此爬取的内容充满不确定性,，为了保证即使某个页面爬取出错也不会影响其他页面的抓取，故将每个抓取方法单独定义.</p>
+                <p><code>getOldpages</code>方法用于读取数据库中已经爬取过的页面和301.txt中保存的没有招聘信息的页面pages，防止爬虫中断后再次执行时重复爬取之前的内容.</p>
+                <p><code>getNewPages</code>使用时与另一段计算遗漏页面的代码配合，可以得到遗漏的页面并提供给爬虫</p>
+            </div>
+        </div>
+        <div class="row">
+            <h3>settings中的配置</h3>
+            <div class="col-lg-9">
+                <pre name="code" class="brush:python">
+BOT_NAME = 'lagouwang'
+SPIDER_MODULES = ['lagouwang.spiders']
+NEWSPIDER_MODULE = 'lagouwang.spiders'
+#设置log级别
+LOG_LEVEL = 'INFO'
+LOG_FILE = 'scrapy.log'
+#ip池子大小
+NUM_PONDS = 50
+LOG_ENABLED = True
+#数据库配置文件
+DBK = {
+    'host':'127.0.0.1',
+    'port':3306,
+    'user':'root',
+    'passwd':'************',
+    'db':'lagouwang',
+    'charset':'utf8'
+}
+#禁止重定向
+REDIRECT_ENABLED = False
+# Obey robots.txt rules
+ROBOTSTXT_OBEY = False
+# Configure maximum concurrent requests performed by Scrapy (default: 16)
+#设置并发值
+CONCURRENT_REQUESTS = 300
+#请求响应延迟
+DOWNLOAD_DELAY = 0.25
+#禁用cookies,防止被ban
+COOKIES_ENABLED = False
+#超时设置
+DOWNLOAD_TIMEOUT = 50
+DOWNLOADER_MIDDLEWARES = {
+    'lagouwang.middlewares.RandomUserAgent':1,
+    'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 110,
+    'lagouwang.middlewares.ProxyMiddleware': 100,
+    'lagouwang.middlewares.CheckResponse':543,
+}
+ITEM_PIPELINES = {
+   'lagouwang.pipelines.LagouwangPipeline': 300,
+}
+                </pre>
+            </div>
+            <div class="col-lg-3">
+                <p><code>LOG_LEVEL</code>:配置log级别为info，不然log太大打开都不容易。当然调试的时候还是要使用debug模式的</p>
+                <p><code>NUM_PONDS</code>:配置IP池子的大小，也就是每次从数据库中提取多少个IP地址出来进行使用,应用于SQL中的limit参数</p>
+                <p><code>DBK</code>:配置数据库的链接参数</p>
+                <p><code>DOWNLOAD_TIMEOUT</code>:超时设置，等待时间设置太长影响速率，太短可能会漏爬，本次设置的是50</p>
+                <p>使用多个<code>USER_AGENTS</code>,随机代理IP，禁用<code>cookies</code>,设置延迟时间等都可以一定程度上防止被ban</p>
+            </div>
+        </div>
+        <div class="row">
+            <h3>middlewares文件</h3>
+            <div class="col-lg-9">
+                <pre name="code" class="brush:python">
+#-*- coding:utf-8 -*-
+from scrapy.exceptions import IgnoreRequest
+import MySQLdb as db
+import random
+from settings import USER_AGENTS
+from scrapy.utils.project import get_project_settings
+from lagouwang.spiders import httpsProxys as hp
+import logging
+import time
+
+#选择随机user-agent
+class RandomUserAgent(object):
+    def process_request(self, request, spider):
+        request.headers.setdefault('User-Agent', random.choice(USER_AGENTS))
+
+#添加代理
+class ProxyMiddleware(object):
+    def process_request(self,request,spider):
+        https_proxy = 'https://'+Sup.getRandomIp()
+        request.meta['proxy'] = https_proxy
+
+#如果返回301则丢弃，其他不正常的状态码全部重新来过
+#301 - 空页面没有招聘信息
+#302 - 被重定向到禁止页面，也就是该代理地址被ban了
+#404 - 空页面没有招聘信息 ：本网站的Coder和PM私奔啦~~~
+class CheckResponse(object):
+    def process_response(self,request,response,spider):
+        logging.info('response url %s with proxy:%s got status %s '%(response.url,request.meta['proxy'],response.status))
+        if response.status != 200:
+            if response.status == 301 or response.status == 404:
+                Sup.letpagesgo(response.url)
+                raise IgnoreRequest('found no pages')
+            else:
+                Sup.deleteProxy(request)
+                new_request = request.copy()
+                new_request.dont_filter = True
+                return new_request
+        else:
+            return response
+
+    #删除伴随异常的代理IP
+    def process_exception(self,request,exception,spider):
+        try:
+            Sup.deleteProxy(request)
+        except Exception,e:
+            print e
+
+#代理辅助
+class Sup(object):
+    DBK = get_project_settings().getdict('DBK')
+    NUM_PONDS = get_project_settings().getint('NUM_PONDS') #IP池大小
+    proxy_pond = [] #IP池
+    proxy_id = [] #IP池中的IP对应在数据库中的id号
+
+    #如果IP池子空了，则调用updateProcyPond更新池子
+    @classmethod
+    def getRandomIp(self):
+        if len(self.proxy_pond)<1:
+            self.updateProxyPond()
+        return random.choice(self.proxy_pond)
+    @classmethod
+    def deleteProxy(self,request):
+        try:
+            proxyIp = request.meta['proxy']
+            willdelete = proxyIp.split('//')[1]
+            if willdelete in self.proxy_pond:
+                self.proxy_pond.remove(willdelete)
+                logging.info('delete proxy %s'%willdelete)
+            else:
+                logging.info("the proxy %s was deleted which not in proxy_pond"%willdelete)
+            logging.info('动态IP池剩余IP数:%s'%len(self.proxy_pond))
+        except Exception,e:
+            logging.info(e)
+            logging.info('delete proxy ip from proxy_pond error')
+
+    #如果池子中的IP都已经用完，且不可使用，则从数据库中删除，然后重新补充IP池子
+    @classmethod
+    def updateProxyPond(self):
+        con = db.connect(self.DBK['host'],self.DBK['user'],self.DBK['passwd'],self.DBK['db'],self.DBK['port'],charset=self.DBK['charset'])
+        cur = con.cursor()
+        if len(self.proxy_id)>0:
+            logging.info('需要清理id个数为...%s'%len(self.proxy_id))
+            for di in self.proxy_id:
+                sql = "delete from xiciproxy where id = %d"%di
+                try:
+                    cur.execute(sql)
+                except Exception,e:
+                    logging.info('delete ip error')
+            con.commit()
+        limis = "select id,ip from xiciproxy limit %d"%self.NUM_PONDS
+        cur.execute(limis)
+        gots = cur.fetchall()
+        if len(gots)<5:
+            print "proxy IP in db is not enough ,please run 'httpsProxys.py' to get more proxy ip address !"
+            logging.info('数据库代理IP不够用了,正在休眠等待抓取...')
+            time.sleep(300)
+        self.proxy_id = map(lambda tp:int(tp[0]),gots)
+        self.proxy_pond = map(lambda tp:tp[1],gots)
+        cur.close()
+        con.close()
+
+    @classmethod
+    def letpagesgo(self,url):
+        page1 = url.split('/')[-1].split('.')[0]
+        page2 = page1+','
+        f = open('301.txt','a')
+        f.writelines(page2)
+        f.close()
+
+
+
+                </pre>
+            </div>
+            <div class="col-lg-3">
+                <h4>下载器中间件</h4>
+                <p>在下载器中间件中定义了一个辅助代理IP的类，它可以以数据库为后盾维护一个供中间件使用的代理IP池,为 <code>request</code>提供随机的 <code>user-agent</code>,随机的代理IP,还可以保证代理IP的新鲜</p>
+                <p>其中，在数据库库存不够时代理IP池的处理方式还不完善，该爬虫运行时使用的是手动查看数据库中的代理IP数量并运行程序爬取代理的方式。另一方案是在spider中初始化一个方法，每隔一段时间调用一次爬取代理的程序，此方法虽然可用，但不确定性很高，暂时还没有其他更好的方案.</p>
+                <p>实际使用的时候并不需要那么多代理IP，这点我在博客中有说明.</p>
+            </div>
+        </div>
+        <div class="row">
+            <h3>pipelines文件</h3>
+            <div class="col-lg-9">
+                <pre name="code" class="brush:python">
+# -*- coding: utf-8 -*-
+import MySQLdb as db
+import urllib2
+from scrapy.utils.project import get_project_settings
+import logging
+
+class LagouwangPipeline(object):
+    def __init__(self):
+        self.DBK = get_project_settings().getdict('DBK')
+
+    def process_item(self, item, spider):
+        # logging.info('pipeline with items preparing for insert into MySQL')
+        con = db.connect(self.DBK['host'],self.DBK['user'],self.DBK['passwd'],self.DBK['db'],self.DBK['port'],charset=self.DBK['charset'])
+        cur = con.cursor()
+        fenlei = findClassify(item['title'],item['jobkwd']).encode('utf-8')
+        jobkwds = ','.join(item['jobkwd'])
+        sql = ("insert into lagou(publish_time,title,jobkwd,salary,background,company,industry,companyurl,description,address,pages,classf)"
+            "values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)")
+        lis = (item['publish_time'],item['title'],jobkwds,item['salary'],item['background'],item['company'],item['industry'],item['companyurl'],item['description'],item['address'],item['pages'],fenlei)
+        try:
+            cur.execute(sql,lis)
+        except Exception,e:
+            logging.info(e)
+            logging.info('insert into MySQL error.................')
+            con.rollback()
+        else:
+            con.commit()
+        cur.close()
+        con.close()
+        logging.info('insert into MySQL over...............')
+        return item
+
+#查询并返回行业分类
+def findClassify(title,kws):
+    classf = {u'市场与销售': {u'高端职位': [u'市场总监', u'销售总监', u'商务总监', 'CMO', u'公关总监', u'采购总监', u'投资总监'], u'销售': [u'销售专员', u'销售经理', u'客户代表', u'大客户代表', u'BD经理', u'商务渠道', u'渠道销售', u'代理商销售', u'销售助理', u'电话销售', u'销售顾问', u'商品经理'], u'供应链': [u'物流', u'仓储'], u'公关': [u'媒介经理', u'广告协调', u'品牌公关'], u'投资': [u'分析师', u'投资顾问', u'投资经理'], u'市场/营销': [u'市场策划', u'市场顾问', u'市场营销', u'市场推广', 'SEO', 'SEM', u'商务渠道', u'商业数据分析', u'活动策划', u'网络营销', u'海外市场', u'政府关系'], u'采购': [u'采购专员', u'采购经理', u'商品经理']}, u'技术': {u'高端职位': [u'技术经理', u'技术总监', u'架构师', 'CTO', u'运维总监', u'技术合伙人', u'项目总监', u'测试总监', u'安全专家', u'高端技术职位其它'], u'运维': [u'运维工程师', u'运维开发工程师', u'网络工程师', u'系统工程师', u'IT支持', 'IDC', 'CDN', 'F5', u'系统管理员', u'病毒分析', u'WEB安全', u'网络安全', u'系统安全', u'运维经理', u'运维其它'], 'DBA': ['MySQL', 'SQLServer', 'Oracle', 'DB2', 'MongoDB', 'ETL', 'Hive', u'数据仓库', u'DBA其它'], u'项目管理': [u'项目经理', u'项目助理'], u'移动开发': ['HTML5', 'Android', 'iOS', 'WP', u'移动开发其它'], u'测试': [u'测试工程师', u'自动化测试', u'功能测试', u'性能测试', u'测试开发', u'游戏测试', u'白盒测试', u'灰盒测试', u'黑盒测试', u'手机测试', u'硬件测试', u'测试经理', u'测试其它'], u'硬件开发': [u'硬件', u'嵌入式', u'自动化', u'单片机', u'电路设计', u'驱动开发', u'系统集成', u'FPGA开发', u'DSP开发', u'ARM开发', u'PCB工艺', u'模具设计', u'热传导', u'材料工程师', u'精益工程师', u'射频工程师', u'硬件开发其它'], u'后端开发': ['Java', 'Python', 'PHP', '.NET', 'C#', 'C++', 'C', 'VB', 'Delphi', 'Perl', 'Ruby', 'Hadoop', 'Node.js', u'数据挖掘', u'自然语言处理', u'搜索算法', u'精准推荐', u'全栈工程师', 'Go', 'ASP', 'Shell', u'后端开发其它'], u'前端开发': [u'web前端', 'Flash', 'html5', 'JavaScript', 'U3D', 'COCOS2D-X', u'前端开发其它'], u'企业软件': [u'实施工程师', u'售前工程师', u'售后工程师', u'BI工程师', u'企业软件其它']}, u'产品': {u'产品设计师': [u'网页产品设计师', u'无线产品设计师'], u'高端职位': [u'产品部经理', u'产品总监', u'游戏制作人'], u'产品经理': [u'产品经理', u'网页产品经理', u'移动产品经理', u'产品助理', u'数据产品经理', u'电商产品经理', u'游戏策划', u'产品实习生']}, u'运营': {u'编辑': [u'副主编', u'内容编辑', u'文案策划', u'记者'], u'高端职位': [u'主编', u'运营总监', 'COO', u'客服总监'], u'客服': [u'售前咨询', u'售后客服', u'淘宝客服', u'客服经理'], u'运营': [u'内容运营', u'产品运营', u'数据运营', u'用户运营', u'活动运营', u'商家运营', u'品类运营', u'游戏运营', u'网络推广', u'运营专员', u'网店运营', u'新媒体运营', u'海外运营', u'运营经理']}, u'设计': {u'视觉设计': [u'网页设计师', u'Flash设计师', u'APP设计师', u'UI设计师', u'平面设计师', u'美术设计师（2D/3D）', u'广告设计师', u'多媒体设计师', u'原画师', u'游戏特效', u'游戏界面设计师', u'视觉设计师', u'游戏场景', u'游戏角色', u'游戏动作'], u'用户研究': [u'数据分析师', u'用户研究员', u'游戏数值策划'], u'高端职位': [u'设计经理/主管', u'设计总监', u'视觉设计经理/主管', u'视觉设计总监', u'交互设计经理/主管', u'交互设计总监', u'用户研究经理/主管', u'用户研究总监'], u'交互设计': [u'网页交互设计师', u'交互设计师', u'无线交互设计师', u'硬件交互设计师']}, u'职能': {u'行政': [u'助理', u'前台', u'行政', u'总助', u'文秘'], u'高端职位': [u'行政总监/经理', u'财务总监/经理', 'HRD/HRM', 'CFO', 'CEO'], u'法务': [u'法务', u'律师', u'专利'], u'人力资源': [u'人事/HR', u'培训经理', u'薪资福利经理', u'绩效考核经理', u'人力资源', u'招聘', 'HRBP', u'员工关系'], u'财务': [u'会计', u'出纳', u'财务', u'结算', u'税务', u'审计', u'风控']}, u'金融': {u'投融资': [u'投资经理', u'分析师', u'投资助理', u'融资', u'并购', u'行业研究', u'投资者关系', u'资产管理', u'理财顾问', u'交易员'], u'高端职位': [u'投资总监', u'融资总监', u'并购总监', u'风控总监', u'副总裁'], u'审计税务': [u'审计', u'法务', u'会计', u'清算'], u'风控': [u'风控', u'资信评估', u'合规稽查', u'律师']}}
+    lists = kws
+
+    #行业分类匹配
+    for key in classf.keys():
+        if key in title or key in lists:
+            return key
+
+    #行业中的小分类匹配
+    key = ""
+    for key,value in classf.items():
+        for ky in value.keys():
+            if ky in title or ky in lists:
+                return key
+
+    #职能匹配
+    key = ""
+    value = ""
+    for key,value in classf.items():
+        for ky,val in value.items():
+            same = [x for x in val if x in lists or x in title]
+            if len(same)>0:
+                return key
+    return ""
+                </pre>
+            </div>
+            <div class="col-lg-3">
+                <h4>在pipelines文件中处理爬取到的数据</h4>
+                <p><code>findClassify</code>方法用来查找该条招聘信息所属的分类</p>
+                <p><code>LagouwangPipeline</code>用于将数据保存到MySQL数据库中 <em>准确性有待考量!</em> </p>
+            </div>
+        </div>
+
+
+</div>
+<div class="blog-footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-12">
+          <div class="panel panel-default">
+               <div class="panel-body">
+                以上是一些关键代码，完整文件见<a href="https://github.com/whaike/lagouwang" target="_blank">Github</a>,更详细的分析见<a href="http://www.jianshu.com/u/3fbb887f05d0" target="_blank" >简书</a>
+
+               </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var change = document.getElementById("navbars")
+change.childNodes[1].setAttribute("class","")
+change.childNodes[3].setAttribute("class","active")
+change.childNodes[5].setAttribute("class","")
+</script>
+{% endblock %}

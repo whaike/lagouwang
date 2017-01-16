@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% block title %}关于作者{% endblock %}
+{% load staticfiles %}
+{% block linkScript %}
+<script type="text/javascript" src="{% static 'js/style.js' %}"></script>
+{% endblock %}
+{% block contents %}
+<div id="myCarousel" class="carousel slide" data-ride="carousel">
+    <ol class="carousel-indicators">
+        <li data-target="#myCarousel" data-slide-to="0" class="active"></li>
+        <li data-target="#myCarousel" data-slide-to="1"></li>
+        <li data-target="#myCarousel" data-slide-to="2"></li>
+    </ol>
+
+    <div class="carousel-inner">
+        <div class="item active">
+            <img src="{% static 'images/4.jpg' %}" style="width:100%" data-src=" " alt="First slide">
+            <div class="container">
+                <div class="carousel-caption">
+                    <h1>心河梦遥</h1>
+                    <p>人生为棋，我愿为卒，行动虽慢，可谁曾见我退后一步</p>
+                    <p><a class="btn btn-lg btn-primary" href="http://www.jianshu.com/users/3fbb887f05d0/latest_articles" target="_blank" role="button">简书博客</a></p>
+                </div>
+            </div>
+        </div>
+        <div class="item">
+            <img src="{% static 'images/5.jpg' %}" style="width:100%" data-src="" alt="Second slide">
+            <div class="container">
+                <div class="carousel-caption">
+                    <h1>爱好编程、音乐和摄影</h1>
+                    <p>你如今的气质里，藏着你走过的路，读过的书，和爱过的人。</p>
+                    <p><a class="btn btn-lg btn-primary" href="https://github.com/whaike/" target="_blank" role="button">Github</a></p>
+                </div>
+            </div>
+        </div>
+        <div class="item">
+            <img src="{% static 'images/6.jpg' %}" style="width:100%" data-src="" alt="Third slide">
+            <div class="container">
+                <div class="carousel-caption">
+                    <h1>天地与我共生，而万物与我唯一</h1>
+                    <p>莽莽苍苍兮/群山巍峨/日月光照兮/纷纭错落/丝竹共振兮/执节者歌/行云流水兮/用心无多 求大道以弭兵兮/凌万物而超脱/觅知音固难得兮/唯天地与作合</p>
+                    <p><a class="btn btn-lg btn-primary" href="http://whaike.lofter.com/" target="_blank" role="button">Lofter</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <a class="left carousel-control" href="#myCarousel" data-slide="prev"><span class="glyphicon glyphicon-chevron-left"></span></a>
+    <a class="right carousel-control" href="#myCarousel" data-slide="next"><span class="glyphicon glyphicon-chevron-right"></span></a>
+</div>
+
+<div class="container">
+  <div class="row cvheader">
+    <div class="col-lg-7 col-md-7 col-xs-12">
+      <!--  添加颜色//-->
+      <h1 class="text-primary"><span class="glyphicon glyphicon-user"></span>黄文治</h1>
+
+      <h3><span class="glyphicon glyphicon-hand-right"></span>  求职意向</h3>
+
+      <p><span class="myico myico-spider"></span> 爬虫工程师 && 后端工程师</p>
+    </div>
+
+    <div class="col-lg-3 col-md-3 col-xs-12">
+      <div class="row">
+
+        <div class="col-lg-4 col-md-4 col-xs-4">
+          <p id="contact" class="address text-center">联系</p>
+        </div>
+
+        <div class="col-lg-8 col-md-8 col-xs-8">
+          <p><span class="glyphicon glyphicon-envelope"></span> huang4573@126.com</p>
+          <p><span class="glyphicon glyphicon-earphone"></span> 15302738153</p>
+          <p><span class="glyphicon glyphicon-road"></span>深圳市西乡盐田新一村</p>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="col-lg-2 col-md-2 col-xs-12">
+      <p>
+        <img data-toggle="tooltip" data-placement="left" id="avatar" title="我是黄文治" class="img-responsive img-rounded" src="http://www.gbtags.com/gb/networks/avatars/13d6393f-a44c-4180-8cb6-7bf0e4776283.png" alt="">
+       </p>
+    </div>
+  </div>
+</div>
+
+<!-- 定义简历的主体部分 //-->
+
+<div class="container">
+  <div class="row cvbody">
+
+    <!-- 这里定义两个区域，布局定义如下：//-->
+
+    <div class="col-lg-6 col-md-6 col-xs-12">
+
+      <div class="row">
+        <div class="cbox green">
+          <h4>个人介绍</h4>
+          <p>
+           热爱并计划长期从事编程方面的工作,喜欢搜集资料,痴迷于用编程去解决计算机问题。对计算机软硬件都有一定认识,自学能力较强,喜欢新奇的计算机技术,爱好创新,待人真诚,有责任感。
+          </p>
+        </div>
+        <div class="cbox red">
+          <h4>个人技能</h4>
+          <p>
+            <!-- 这里使用Bootstrap3的组件添加技能 //-->
+
+            HTML/CSS/Javascript/Jquery/bootstrap
+            <div class="progress">
+              <div class="progress-bar progress-bar-success" style="width:50%"></div>
+            </div>
+
+            Python
+            <div class="progress">
+              <div class="progress-bar progress-bar-primary" style="width:80%"></div>
+            </div>
+
+            MySQL
+            <div class="progress">
+              <div class="progress-bar progress-bar-info" style="width:70%"></div>
+            </div>
+
+            Django/Scrapy
+            <div class="progress">
+              <div class="progress-bar progress-bar-warning" style="width:60%"></div>
+            </div>
+          </p>
+        </div>
+        <div class="cbox orange">
+          <h4>语言水平</h4>
+          <p>
+      <canvas id="en" width="150" height="150" class="pull-left"></canvas>
+      <canvas id="zh" width="150" height="150" class="pull-right"></canvas>
+      <p class="clearfix"></p>
+          </p>
+        </div>
+      </div>
+
+    </div>
+    <!-- 区域分割 -->
+    <div class="col-lg-1 col-md-1 col-xs-12"></div>
+
+    <div class="col-lg-5 col-md-5 col-xs-12">
+
+      <div class="row">
+        <div class="bbox">
+          <h4>教育背景</h4>
+          <p>学历: 大专</p>
+          <p>毕业院校: 华中科技大学文华学院</p>
+        </div>
+        <div class="bbox">
+          <h4>工作经验</h4>
+          <p>兴英科技 : 计算机主板测试- 7个月</p>
+          <p>海能达 : FAT测试 - 20个月</p>
+        </div>
+        <div class="bbox">
+          <h4>个人爱好</h4>
+          <p>
+            <span class="glyphicon glyphicon-qrcode"></span> 编程
+            <span class="glyphicon glyphicon-plane"></span> 旅行
+            <p><span class="glyphicon glyphicon-music"></span> 音乐</p>
+            <p><span class="glyphicon glyphicon-book"></span> 看书
+            <span class="glyphicon glyphicon-camera"></span> 摄影</p>
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script>
+var change = document.getElementById("navbars")
+change.childNodes[1].setAttribute("class","")
+change.childNodes[3].setAttribute("class","")
+change.childNodes[5].setAttribute("class","active")
+</script>
+{% endblock %}

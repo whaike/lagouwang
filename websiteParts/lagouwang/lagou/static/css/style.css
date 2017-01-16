@@ -1,0 +1,85 @@
+body{
+	padding-top:51px;
+	/*background-color: rgba(207, 200, 184, 0.42);*/
+	background-color:rgb(251, 250, 248);
+}
+
+div.changebg{
+	background-color:#00b38a;
+}
+img,embed{
+	width:100%;
+}
+
+.copyright{
+	background: #222222;
+    font-size: 13px;
+    text-align: center;
+    color: #555555;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    border-top: 1px solid #303030;
+}
+.copyright a{
+	color: #555555;
+}
+.copyright a:hover{
+	color:#fff;
+}
+
+
+/*简历模板*/
+.cvheader{
+	  border-bottom: 1px solid #DFDFDF;
+	  padding-top:30px;
+	  padding-bottom:20px;
+	}
+
+	.cvheader h1{
+	  margin:0;
+	}
+
+	.address{
+	  background: #efb73e;
+	  color: #fff;
+	  padding: 10px 0;
+	}
+
+	/* 定义辅助CSS来美化简历主体 */
+
+	.cvbody{
+	  padding-top: 50px; 
+	}
+
+	.cbox{
+	  margin-bottom: 30px;
+	  color: #FFF;
+	  padding: 50px;
+	}
+
+	/* 定义cbox颜色 */
+	.green{
+	  background: #2ecc71;
+	}
+
+	.orange{
+	  background: orange;
+	}
+
+	.red{
+	  background: #dd4814;
+	}
+
+	.bbox{
+	  border: 1px solid #DFDFDF;
+	  border-radius: 5px;
+	  margin-bottom:30px;
+	  padding: 50px;
+	}
+
+.myico{
+	padding-left:25px;
+}
+.myico-spider{
+	background: url('../images/spider.ico') no-repeat;
+}

@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title %}拉钩网数据分析展示{% endblock %}
+
+{% block contents %}
+
+<div class="jumbotron changebg">
+    <div class="container">
+        <h2>拉勾网整站数据抓取与分析</h2>
+        <br>
+        <a href="https://github.com/whaike/lagouwang" target="_blank"  class="btn btn-info">Github源码</a> <a href="http://pan.baidu.com/s/1skEDyXn" target="_blank"  class="btn btn-success">拉钩数据下载</a> <a href="http://www.jianshu.com/u/3fbb887f05d0" target="_blank" class="btn btn-primary">简书</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-9">
+            <embed type="image/svg+xml" src="{{ svg_allByYear | safe }}" ></embed>
+        </div>
+        <div class="col-lg-3">
+            <h4>招聘信息年度需求</h4>
+            <p>不论哪个行业，人才需求都是逐年增长的</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-9">
+            <embed type="image/svg+xml" src="{{ svg_allByQ | safe }}"></embed>
+        </div>
+        <div class="col-lg-3">
+            <h4>招聘信息季度走势图</h4>
+            <p>这张的走势就比较明显了，希望我不要错过这个好时候</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <embed type="image/svg+xml" src="{{ svg_classfWithBackground | safe }}"></embed>
+        </div>
+        <div class="col-lg-3">
+            <h4>各职位对经验的要求前十</h4>
+            <p>可以看出1-3年的数量还是很多的，要对自己有信心</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <embed type="image/svg+xml" src="{{ svg_classfWithSalary | safe }}"></embed>
+        </div>
+        <div class="col-lg-3">
+            <h4>各职位对薪资分布前十</h4>
+            <p>还是加班厉害啊</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <embed type="image/svg+xml" src="{{ svg_classTechIndus | safe }}"></embed>
+        </div>
+        <div class="col-lg-3">
+            <h4>还是看点自己更关心的吧</h4>
+            <p>之前移动互联网听到的似乎并不多啊，算是刷新了我的认知了</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <embed type="image/svg+xml" src="{{ svg_classTechJob | safe }}"></embed>
+        </div>
+        <div class="col-lg-3">
+            <h4>技术类具体职位分布</h4>
+            <p>谁说PHP是世界上最好的语言？</p>
+            <p>咦~？我的Python呢？</p>
+        </div>
+    </div>
+
+{#    <div class="row">#}
+{#        <div class="col-lg-9">#}
+{#            <embed type="image/svg+xml" src="{{ svg_TechPythonSalary | safe }}"></embed>#}
+{#        </div>#}
+{#        <div class="col-lg-3">#}
+{#            <h4>Python的分布</h4>#}
+{#            <p>谁说PHP是世界上最好的语言？</p>#}
+{#            <p>咦~？我的Python呢？</p>#}
+{#        </div>#}
+{#    </div>#}
+
+    <div class="row">
+        <div class="col-lg-9" id="user_first">
+            <embed type="image/svg+xml" src="{{ svg_all_salary | safe }}" ></embed>
+        </div>
+        <div class="col-lg-3">
+            <h4>自定义查询1</h4>
+            <div class="btn-group">
+                <select class="form-control" id="selected1">
+                    <option value="salary">薪资</option>
+                    <option value="background">经验</option>
+                    <option value="industry">行业</option>
+                    <option value="company">公司</option>
+                </select>
+            </div>
+            <label><input type="button" id="usertype1" class="btn btn-default form-control" value="查询" /></label>
+            <hr/>
+
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10" id="user_second">
+            <div class="row">
+                <div class="col-lg-6 data1"><embed type="image/svg+xml" src="{{ svg_python_salary | safe }}" ></embed></div>
+                <div class="col-lg-6 data2"><embed type="image/svg+xml" src="{{ svg_pyhton_background | safe }}" ></embed></div>
+                <div class="col-lg-6 data3"><embed type="image/svg+xml" src="{{ svg_pyhton_industry | safe }}" ></embed></div>
+                <div class="col-lg-6 data4"><embed type="image/svg+xml" src="{{ svg_pyhton_company | safe }}" ></embed></div>
+            </div>
+        </div>
+        <div class="col-lg-2">
+            <h4>自定义查询2</h4>
+            <div class="input-group">
+            <input type="text" class="form-control" placeholder="输入关心职位" id="inputs">
+            <span class="input-group-btn">
+                <button class="btn btn-default" type="button" id="usertype2">查询</button>
+            </span>
+            </div><!-- /input-group -->
+            <h5 id="state">默认：Python的一些情况</h5>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9 data5">
+            <embed type="image/svg+xml" src="{{ svg_python_allByYear | safe }}"></embed>
+        </div>
+        <div class="col-lg-3">
+            <h4>自定义查询2</h4>
+            <p>分类比较</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+var change = document.getElementById("navbars")
+change.childNodes[1].setAttribute("class","active")
+change.childNodes[3].setAttribute("class","")
+change.childNodes[5].setAttribute("class","")
+</script>
+<script>
+$.ajaxSetup({
+    data: {csrfmiddlewaretoken: '{{ csrf_token }}' }
+});
+
+
+
+$('#usertype1').click(function(){
+    $.ajax({
+        type:'POST',
+        url:'http://127.0.0.1:8000/lagou/userinfo/',
+        dataType:'json',
+        data:{'bt':1,
+            'care':$('#selected1').val()},
+        success:function(data){
+            json_str = JSON.stringify(data);
+            json_data = JSON.parse(json_str);
+            $('#user_first').html('<embed type="image/svg+xml" src="'+json_data.svg+'" ></embed>')
+        }
+    });
+});
+
+function checkof(kw){
+    kw = kw.trim()
+    if(isNaN(kw)){
+        return kw
+    }else{
+        return false
+    }
+}
+
+$('#usertype2').click(function(event){
+    keyword = $('#inputs').val() ;
+    kd = checkof(keyword);
+    console.log('判断');
+    console.log(kd);
+    if (kd==false){
+        $('#state').html('输入有误!');
+        event.preventDefault();
+    }else{
+        $('#state').html('正在查询，请勿再次提交!');
+        document.getElementById('usertype2').disabled=true;
+        $.ajax({
+            type: 'POST',
+            url: 'http://127.0.0.1:8000/lagou/userinfo/',
+            dataType: 'json',
+            data: {'bt': 2,
+                'care':kd },
+            success: function (data) {
+                json_str = JSON.stringify(data);
+                json_data = JSON.parse(json_str);
+                if(json_data.status=='ValueError'){
+                    $('#state').html('ValueError!');
+                    document.getElementById('usertype2').disabled=false;
+                    event.preventDefault();
+                }else{
+                    $('.data1').html('<embed type="image/svg+xml" src="' + json_data.salary + '" ></embed>')
+                    $('.data2').html('<embed type="image/svg+xml" src="' + json_data.background + '" ></embed>')
+                    $('.data3').html('<embed type="image/svg+xml" src="' + json_data.industry + '" ></embed>')
+                    $('.data4').html('<embed type="image/svg+xml" src="' + json_data.company + '" ></embed>')
+                    $('.data5').html('<embed type="image/svg+xml" src="' + json_data.allByYear + '" ></embed>')
+                    $('#state').html('查询成功!');
+                    document.getElementById('usertype2').disabled=false;
+                }
+            }
+        });
+    }
+});
+
+</script>
+{% endblock %}
