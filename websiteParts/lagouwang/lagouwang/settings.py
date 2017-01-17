@@ -1,3 +1,4 @@
+#-*-coding:utf-8 -*-
 """
 Django settings for lagouwang project.
 
@@ -11,10 +12,10 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
+import socket
 
-
+# 这三条可以语句可以让服务器正常显示svg图片
 import mimetypes
-
 mimetypes.add_type("image/svg+xml", ".svg", True)
 mimetypes.add_type("image/svg+xml", ".svgz", True)
 
@@ -29,9 +30,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '!@gcvfqhmqy=b!-93c1y7q1=9*e1m(f=kflp!42+jd!2=sad%x'
 
 # SECURITY WARNING: don't run with debug turned on in production!
+# if socket.gethostname() == 'whaike':
+#     DEBUG = True
+# else:
+#     DEBUG = False
 DEBUG = True
-
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -50,9 +53,6 @@ LOGGING = {
         },
     },
 }
-
-
-
 
 
 
@@ -114,7 +114,7 @@ DATABASES = {
         'HOST':'127.0.0.1',
         'PORT':'3306',
         'USER':'root',
-        'PASSWORD':'12706954_mysql',
+        'PASSWORD':'*************',
     }
 }
 

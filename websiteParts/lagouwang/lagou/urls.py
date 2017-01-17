@@ -8,4 +8,4 @@ urlpatterns = [
     url(r'^author/$',views.author,name='author'),
     url(r'^userinfo/$',views.userinfo,name='userinfo'),
 ]
-handler404 = 'lagou.views.page_not_found'
+#handler404 = 'lagou.views.page_not_found'

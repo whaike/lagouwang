@@ -174,10 +174,47 @@ function checkof(kw){
     }
 }
 
+{#$('#usertype2').click(function(event){#}
+{#    keyword = $('#inputs').val() ;#}
+{#    kd = checkof(keyword);#}
+{#    console.log('判断');#}
+{#    console.log(kd);#}
+{#    if (kd==false){#}
+{#        $('#state').html('输入有误!');#}
+{#        event.preventDefault();#}
+{#    }else{#}
+{#        $('#state').html('正在查询，请勿再次提交!');#}
+{#        document.getElementById('usertype2').disabled=true;#}
+{#        $.ajax({#}
+{#            type: 'POST',#}
+{#            url: 'http://127.0.0.1:8000/lagou/userinfo/',#}
+{#            dataType: 'json',#}
+{#            data: {'bt': 2,#}
+{#                'care':kd },#}
+{#            success: function (data) {#}
+{#                json_str = JSON.stringify(data);#}
+{#                json_data = JSON.parse(json_str);#}
+{#                if(json_data.status=='ValueError'){#}
+{#                    $('#state').html('ValueError!');#}
+{#                    document.getElementById('usertype2').disabled=false;#}
+{#                    event.preventDefault();#}
+{#                }else{#}
+{#                    $('.data1').html('<embed type="image/svg+xml" src="' + json_data.salary + '" ></embed>')#}
+{#                    $('.data2').html('<embed type="image/svg+xml" src="' + json_data.background + '" ></embed>')#}
+{#                    $('.data3').html('<embed type="image/svg+xml" src="' + json_data.industry + '" ></embed>')#}
+{#                    $('.data4').html('<embed type="image/svg+xml" src="' + json_data.company + '" ></embed>')#}
+{#                    $('.data5').html('<embed type="image/svg+xml" src="' + json_data.allByYear + '" ></embed>')#}
+{#                    $('#state').html('查询成功!');#}
+{#                    document.getElementById('usertype2').disabled=false;#}
+{#                }#}
+{#            }#}
+{#        });#}
+{#    }#}
+{# });#}
+
 $('#usertype2').click(function(event){
     keyword = $('#inputs').val() ;
     kd = checkof(keyword);
-    console.log('判断');
     console.log(kd);
     if (kd==false){
         $('#state').html('输入有误!');
@@ -207,6 +244,12 @@ $('#usertype2').click(function(event){
                     $('#state').html('查询成功!');
                     document.getElementById('usertype2').disabled=false;
                 }
+            },
+            error:function(XMLHttpRequest,textStatus,errorThrown){
+                errorText = textStatus;
+                errorStatus = XMLHttpRequest.readyState;
+                $('#state').html('查询失败 - 描述:'+errorText+' - 状态码:'+errorStatus);
+                document.getElementById('usertype2').disabled=false;
             }
         });
     }

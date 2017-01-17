@@ -7,11 +7,11 @@ import pygal
 import json
 import urllib
 import MySQLdb as db
-import logging
-from datetime import datetime
+#import logging
+#from datetime import datetime
 # Create your views here.
 
-
+#主页函数
 def index(request):
     svg_allByYear = allByYear()
     svg_allByQ = allByQ()
@@ -28,6 +28,7 @@ def index(request):
     svg_python_allByYear = data['allByYear']
     return render(request,'index.html',locals())
 
+#自定义查询入口
 def userinfo(request):
     if request.is_ajax() and request.POST:
         care = request.POST.get('care')
@@ -45,21 +46,23 @@ def userinfo(request):
     else:
         raise Http404()
 
-def page_not_found(request):
-    return render_to_response('404.html')
+# def page_not_found(request):
+#     return render_to_response('404.html')
 
-
+#按用户查询的信息读取数据库
 def get_json_second(care):
-    con = db.connect('localhost','root','mysql123456','lagouwang',charset='utf8')
+    con = db.connect('localhost','root','*********','lagouwang',charset='utf8')
     sql = "select publish_time,title,jobkwd,salary,background,company,industry,classf from lagou where jobkwd like '%"+care+"%' or title like '%"+care+"%' "
     df = pd.read_sql(sql,con)
     if len(df)<=10:
         raise Http404()
     return df
 
+#将用户查询的信息进行编码，尤其是中文，方便存储
 def encodings(kw):
     return urllib.quote(kw)
 
+#根据用户需求绘制图表
 def draws(care):
     def draw(df,name,names):
         print '开始绘制%s'%name
@@ -111,29 +114,31 @@ def draws(care):
                 finaldatas['allByYear']= allByYear(df,names)
     return finaldatas
 
-
+#自定义查询1的查询函数
 def get_json_objects(care):
     test = userDefind_classf(care)
     svgs = {}
     svgs['svg'] = test
     return svgs
 
+#源码展示页函数
 def about(request):
     return render(request,'about.html',locals())
 
+#个人信息展示页函数
 def author(request):
     return render(request,'author.html',locals())
-
+#从csv中读取数据
 def getdf():
-    df = pd.read_csv('/opt/disk1/databases/lagouwang.csv',sep=';',index_col="publish_time",parse_dates=True,encoding="utf-8")
+    df = pd.read_csv('lagouwang.csv',sep=';',index_col="publish_time",parse_dates=True,encoding="utf-8")
     return df
-
+#将生成的图表保存到数据库
 def svgToMysql(name,data):
     try:
         Svgdatas.objects.create(name=name,data=data)
     except Exception,e:
         print "insert Error"
-
+#从数据库中查找用户需要的图表
 def svgFromMysql(name):
     try:
         svg = Svgdatas.objects.filter(name=name).values('data')
@@ -270,15 +275,6 @@ def classTechJob():
     svgToMysql('classTechJob',datas)
     return datas
 
-# def TechPythonSalary():
-#     findsvg = svgFromMysql("TechPythonSalary")
-#     if findsvg:
-#         return findsvg
-#     df = getdf()
-
-
-
-
 
 def changeToChinese(name):
     cn = ''
@@ -294,6 +290,7 @@ def changeToChinese(name):
         cn = name
     return cn
 
+#自定义查询2的绘图函数之一
 def userDefind_classf(care):
     #df1 = df.copy()
     #df1 = df1.reset_index()

@@ -6,7 +6,7 @@
       <jdbc-driver>com.mysql.jdbc.Driver</jdbc-driver>
       <jdbc-url>jdbc:mysql://127.0.0.1:3306/lagouwang</jdbc-url>
       <user-name>root</user-name>
-      <user-password>df9bdf98df9ddf9adf9cdf93df9fdf9edff5dfc7dfd3dfd9dfdbdfc6</user-password>
+      <user-password>df80df80df80df80df80df80df80df80df80df80df80df80df80</user-password>
       <libraries />
     </data-source>
   </component>
